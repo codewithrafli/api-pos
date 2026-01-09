@@ -34,8 +34,7 @@ class ProductController extends Controller
 
     public function options(GetProductsRequest $request)
     {
-        $products = Product::select('id', 'name')
-            ->search($request->search)
+        $products = Product::search($request->search)
             ->byCategory($request->product_category_id)
             ->orderBy('name')
             ->get();
