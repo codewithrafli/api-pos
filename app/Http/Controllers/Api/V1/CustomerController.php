@@ -10,10 +10,23 @@ use App\Http\Requests\UpdateCustomerRequest;
 use App\Http\Resources\CustomerResource;
 use App\Http\Resources\PaginatedResource;
 use App\Models\Customer;
+use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 
-class CustomerController extends Controller
+class CustomerController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware(PermissionMiddleware::using('view_customers'), only: ['index', 'show', 'options']),
+            new Middleware(PermissionMiddleware::using('create_customers'), only: ['store']),
+            new Middleware(PermissionMiddleware::using('edit_customers'), only: ['update']),
+            new Middleware(PermissionMiddleware::using('dlete_customers'), only: ['destroy'])
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

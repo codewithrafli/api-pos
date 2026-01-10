@@ -11,11 +11,22 @@ use App\Http\Resources\TransactionResource;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
+use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 
-class TransactionController extends Controller
+class TransactionController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware(PermissionMiddleware::using('view_transactions'), only: ['index', 'show']),
+            new Middleware(PermissionMiddleware::using('create_transactions'), only: ['store']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -101,7 +112,6 @@ class TransactionController extends Controller
                 'Transaction created successfully',
                 Response::HTTP_CREATED
             );
-
         } catch (\Exception $e) {
             DB::rollBack();
 

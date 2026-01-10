@@ -9,10 +9,20 @@ use App\Http\Resources\ProductCategoryResource;
 use App\Models\ProductCategory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 
-class ProductCategoryImageController extends Controller
+class ProductCategoryImageController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware(PermissionMiddleware::using('edit_product_categories')),
+        ];
+    }
+
     public function store(UploadProductCategoryImageRequest $request, string $id)
     {
         $category = ProductCategory::find($id);

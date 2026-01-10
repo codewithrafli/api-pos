@@ -11,10 +11,23 @@ use App\Http\Resources\PaginatedResource;
 use App\Http\Resources\ProductCategoryResource;
 use App\Models\ProductCategory;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 
-class ProductCategoryController extends Controller
+class ProductCategoryController extends Controller implements HasMiddleware
 {
+    public static function middleware()
+    {
+        return [
+            new Middleware(PermissionMiddleware::using('view_product_categories'), only: ['index', 'show', 'options']),
+            new Middleware(PermissionMiddleware::using('create_product_categories'), only: ['store']),
+            new Middleware(PermissionMiddleware::using('edit_product_categories'), only: ['update']),
+            new Middleware(PermissionMiddleware::using('dlete_product_categories'), only: ['destroy'])
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
