@@ -10,9 +10,9 @@ use App\Http\Requests\UpdateCustomerRequest;
 use App\Http\Resources\CustomerResource;
 use App\Http\Resources\PaginatedResource;
 use App\Models\Customer;
-use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
 class CustomerController extends Controller implements HasMiddleware

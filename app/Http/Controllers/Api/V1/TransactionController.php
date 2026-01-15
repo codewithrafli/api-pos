@@ -11,10 +11,11 @@ use App\Http\Resources\TransactionResource;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
-use Illuminate\Foundation\Configuration\Middleware;
+use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
 class TransactionController extends Controller implements HasMiddleware
@@ -48,13 +49,16 @@ class TransactionController extends Controller implements HasMiddleware
      */
     public function store(StoreTransactionRequest $request)
     {
+        $data = $request->validated();
+
         try {
             DB::beginTransaction();
 
             $subtotal = 0;
             $itemsData = [];
+            $itemsForNotification = [];
 
-            foreach ($request->items as $item) {
+            foreach ($data['items'] as $item) {
                 $product = Product::find($item['product_id']);
 
                 if (!$product) {
@@ -75,6 +79,12 @@ class TransactionController extends Controller implements HasMiddleware
                     'subtotal' => $itemSubtotal,
                     'model' => $product // Keep reference for stock update
                 ];
+
+                $itemsForNotification[] = [
+                    'name' => $product->name,
+                    'quantity' => $item['quantity'],
+                    'subtotal' => $itemSubtotal,
+                ];
             }
 
             // Calculate Tax (Assuming 11%)
@@ -92,23 +102,36 @@ class TransactionController extends Controller implements HasMiddleware
                 'total' => $total,
             ]);
 
-            foreach ($itemsData as $data) {
-                TransactionItem::create([
-                    'transaction_id' => $transaction->id,
-                    'product_id' => $data['product_id'],
-                    'price' => $data['price'],
-                    'quantity' => $data['quantity'],
-                    'subtotal' => $data['subtotal'],
-                ]);
+            foreach ($itemsData as $itemData) {
+                $transaction->items()->create($itemData);
 
                 // Deduct Stock
-                $data['model']->decrement('stock', $data['quantity']);
+                $itemData['model']->decrement('stock', $itemData['quantity']);
             }
 
             DB::commit();
 
+            $transaction->load(['customer', 'items.product']);
+
+            if (!empty($data['send_notification']) && $transaction->customer?->phone) {
+                $whatsAppService = new WhatsAppService();
+
+                $whatsAppService->sendTransactionReceipt(
+                    $transaction->customer->phone,
+                    [
+                        'code' => $transaction->code,
+                        'date' => $transaction->created_at->format('d/m/Y H:i'),
+                        'customer_name' => $transaction->customer->name,
+                        'items' => $itemsForNotification,
+                        'subtotal' => number_format($subtotal, 0, ',', '.'),
+                        'tax' => number_format($tax, 0, ',', '.'),
+                        'total' => number_format($total, 0, ',', '.'),
+                    ]
+                );
+            }
+
             return ApiResponse::success(
-                new TransactionResource($transaction->load(['customer', 'items.product'])),
+                new TransactionResource($transaction),
                 'Transaction created successfully',
                 Response::HTTP_CREATED
             );

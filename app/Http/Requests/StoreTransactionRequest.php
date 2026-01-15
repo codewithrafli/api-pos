@@ -26,6 +26,7 @@ class StoreTransactionRequest extends FormRequest
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'send_notification' => 'nullable|boolean'
         ];
     }
 }

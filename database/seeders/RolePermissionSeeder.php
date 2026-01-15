@@ -16,45 +16,55 @@ class RolePermissionSeeder extends Seeder
     {
         $permissions = [
             // Dashboard
+            'menu_dashboard',
             'view_dashboard_statistics',
 
             // Product Categories
+            'menu_product_categories',
             'view_product_categories',
             'create_product_categories',
             'edit_product_categories',
             'delete_product_categories',
 
             // Products
+            'menu_products',
             'view_products',
             'create_products',
             'edit_products',
             'delete_products',
 
             // Customers
+            'menu_customers',
             'view_customers',
             'create_customers',
             'edit_customers',
             'delete_customers',
 
             // Transaction
+            'menu_transaction',
+            'menu_pos',
             'view_transactions',
             'create_transactions'
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
-        $adminRole = Role::create(['name' => 'super-admin']);
-        $adminRole->givePermissionTo(Permission::all());
+        $adminRole = Role::firstOrCreate(['name' => 'super-admin']);
+        $adminRole->syncPermissions(Permission::all());
 
-        $cashierRole = Role::create(['name' => 'cashier']);
-        $cashierRole->givePermissionTo([
+        $cashierRole = Role::firstOrCreate(['name' => 'cashier']);
+        $cashierRole->syncPermissions([
+            'menu_dashboard',
             'view_dashboard_statistics',
             'view_product_categories',
             'view_products',
             'view_customers',
             'create_customers',
+
+            'menu_pos',
+            'menu_transaction',
             'view_transactions',
             'create_transactions'
         ]);
